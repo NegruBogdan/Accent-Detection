@@ -1,0 +1,8 @@
+yt-dlp
+moviepy==1.0.3
+torchaudio
+torch
+scikit-learn
+librosa
+transformers
+pydub

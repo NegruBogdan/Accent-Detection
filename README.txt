@@ -1,0 +1,2 @@
+In order to run this script, make sure you have Python installed on your machine. Required modules are listed in the requirements.txt file. You can install them by running this line pip install -r requirements.txt . A version of ffmpeg should also pe present in the environment.
+Once these steps are done, you can run the script from the command line by executing: python accent_prediction_script.py --url "your_url".
