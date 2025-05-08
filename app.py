@@ -9,6 +9,7 @@ import numpy as np
 from scipy.signal import resample
 import streamlit as st
 
+# Function to extract audio from a YouTube video
 def extract_audio_from_video(url):
     try:
         print(f"Extracting audio from: {url}")
@@ -30,13 +31,16 @@ def extract_audio_from_video(url):
         print(f"Failed to extract audio: {e}")
         return None
 
-def load_model(model_name="facebook/wav2vec2-large-xlsr-53"):
+# Function to load the fine-tuned model and processor from Hugging Face
+def load_model(model_name="BoboThePotato/BobosAudioModel"):
+    # Load the processor (Wav2Vec2Processor is the same for both the original and fine-tuned models)
+    processor = Wav2Vec2Processor.from_pretrained("facebook/wav2vec2-base")  # Using the same processor as during training
+    # Load the model with the fine-tuned state_dict from Hugging Face
     model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name, num_labels=23, problem_type="single_label_classification")
-    processor = Wav2Vec2Processor.from_pretrained(model_name)
-    model.eval()
+    model.eval()  # Set model to evaluation mode
     return model, processor
 
-# Load the label mapping
+# Load the label mapping (the labels should match your fine-tuned model's labels)
 def load_label_mapping():
     return {
         0: "Dutch",
@@ -64,17 +68,20 @@ def load_label_mapping():
         22: "American"
     }
 
+# Function to make predictions using the model
 def predict_accent(audio_path, model, processor, label_mapping):
     try:
+        # Read and preprocess the audio file
         speech_array, original_sr = sf.read(audio_path)
         if len(speech_array.shape) > 1:
-            speech_array = speech_array.mean(axis=1) 
+            speech_array = speech_array.mean(axis=1)  # Convert stereo to mono if needed
 
-        target_sr = 16000
+        target_sr = 16000  # Wav2Vec2 expects 16kHz audio
         if original_sr != target_sr:
             num_samples = int(len(speech_array) * target_sr / original_sr)
             speech_array = resample(speech_array, num_samples)
 
+        # Process the audio input
         inputs = processor(speech_array, sampling_rate=target_sr, return_tensors="pt", padding=True)
         inputs = {key: val.to(model.device) for key, val in inputs.items()}
 
@@ -91,17 +98,23 @@ def predict_accent(audio_path, model, processor, label_mapping):
         print(f"Error during audio prediction: {e}")
         return None, None
 
+# Streamlit app
 def main():
     st.title("Accent Detection from YouTube Video")
 
     url = st.text_input("Enter YouTube URL:")
 
     if url:
+        # Load the model and processor
         model, processor = load_model()
 
+        # Load label mapping (same as during training)
         label_mapping = load_label_mapping()
+        
+        # Extract audio from the video
         audio_path = extract_audio_from_video(url)
         if audio_path:
+            # Predict accent using the model
             predicted_label, confidence = predict_accent(audio_path, model, processor, label_mapping)
             if predicted_label is not None:
                 st.write(f"Predicted Accent: {predicted_label}")
@@ -110,5 +123,6 @@ def main():
                 st.write("Accent prediction failed.")
         else:
             st.write("Failed to extract audio from the video.")
+
 if __name__ == "__main__":
     main()
