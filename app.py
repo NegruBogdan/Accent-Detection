@@ -1,14 +1,114 @@
+import yt_dlp
+import moviepy.editor as mp
+import torch
+from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2Processor
+import soundfile as sf
+import os
+from pydub import AudioSegment
+import numpy as np
+from scipy.signal import resample
 import streamlit as st
-from model_runner import predict_from_url
 
-st.title("English Accent Detector")
+def extract_audio_from_video(url):
+    try:
+        print(f"Extracting audio from: {url}")
+        video_path = "downloaded_video.mp4"
+        ydl_opts = {
+            'format': '137+251',
+            'outtmpl': 'downloaded_video.%(ext)s'
+        }
+        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+            ydl.download([url])
 
-url = st.text_input("Paste YouTube video URL:")
+        downloaded_path = "downloaded_video.mkv"
+        audio_output = "audio.mp3"
 
-if st.button("Run Prediction"):
+        video = mp.VideoFileClip(downloaded_path)
+        video.audio.write_audiofile(audio_output)
+        return audio_output
+    except Exception as e:
+        print(f"Failed to extract audio: {e}")
+        return None
+
+def load_model(model_name="facebook/wav2vec2-large-xlsr-53"):
+    model = Wav2Vec2ForSequenceClassification.from_pretrained(model_name, num_labels=23, problem_type="single_label_classification")
+    processor = Wav2Vec2Processor.from_pretrained(model_name)
+    model.eval()
+    return model, processor
+
+# Load the label mapping
+def load_label_mapping():
+    return {
+        0: "Dutch",
+        1: "German",
+        2: "Czech",
+        3: "Polish",
+        4: "French",
+        5: "Hungarian",
+        6: "Finnish",
+        7: "Romanian",
+        8: "Slovak",
+        9: "Spanish",
+        10: "Italian",
+        11: "Estonian",
+        12: "Lithuanian",
+        13: "Croatian",
+        14: "Slovene",
+        15: "English",
+        16: "Scottish",
+        17: "Irish",
+        18: "Northern Irish",
+        19: "Indian",
+        20: "Vietnamese",
+        21: "Canadian",
+        22: "American"
+    }
+
+def predict_accent(audio_path, model, processor, label_mapping):
+    try:
+        speech_array, original_sr = sf.read(audio_path)
+        if len(speech_array.shape) > 1:
+            speech_array = speech_array.mean(axis=1) 
+
+        target_sr = 16000
+        if original_sr != target_sr:
+            num_samples = int(len(speech_array) * target_sr / original_sr)
+            speech_array = resample(speech_array, num_samples)
+
+        inputs = processor(speech_array, sampling_rate=target_sr, return_tensors="pt", padding=True)
+        inputs = {key: val.to(model.device) for key, val in inputs.items()}
+
+        # Make the prediction
+        with torch.no_grad():
+            logits = model(**inputs).logits
+
+        predicted_id = torch.argmax(logits, dim=-1).item()
+        confidence = torch.softmax(logits, dim=-1)[0][predicted_id].item()
+        predicted_label = label_mapping[predicted_id]
+
+        return predicted_label, confidence
+    except Exception as e:
+        print(f"Error during audio prediction: {e}")
+        return None, None
+
+def main():
+    st.title("Accent Detection from YouTube Video")
+
+    url = st.text_input("Enter YouTube URL:")
+
     if url:
-        with st.spinner("Analyzing..."):
-            result = predict_from_url(url)
-        st.success(result)
-    else:
-        st.warning("Please provide a valid URL.")
+        model, processor = load_model()
+
+        label_mapping = load_label_mapping()
+        audio_path = extract_audio_from_video(url)
+        if audio_path:
+            predicted_label, confidence = predict_accent(audio_path, model, processor, label_mapping)
+            if predicted_label is not None:
+                st.write(f"Predicted Accent: {predicted_label}")
+                st.write(f"Confidence: {confidence:.2f}")
+            else:
+                st.write("Accent prediction failed.")
+        else:
+            st.write("Failed to extract audio from the video.")
+if __name__ == "__main__":
+    main()
