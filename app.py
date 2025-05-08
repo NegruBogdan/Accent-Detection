@@ -118,15 +118,18 @@ def main():
         label_mapping = load_label_mapping()
         
         audio_path = extract_audio_from_video(url)
-        if audio_path:
-            predicted_label, confidence = predict_accent(audio_path, model, processor, label_mapping)
-            if predicted_label is not None:
-                st.write(f"Predicted Accent: {predicted_label}")
-                st.write(f"Confidence: {confidence:.2f}")
+        video_path = "downloaded_video.mkv"
+        try:
+            if audio_path:
+                predicted_label, confidence = predict_accent(audio_path, model, processor, label_mapping)
+                if predicted_label is not None:
+                    st.write(f"Predicted Accent: {predicted_label}")
+                    st.write(f"Confidence: {confidence:.2f}")
+                else:
+                    st.write("Accent prediction failed.")
             else:
-                st.write("Accent prediction failed.")
-        else:
-            st.write("Failed to extract audio from the video.")
-
-if __name__ == "__main__":
-    main()
+                st.write("Failed to extract audio from the video.")
+        finally:
+            for file in [audio_path, video_path]:
+                if file and os.path.exists(file):
+                    os.remove(file)
