@@ -32,7 +32,7 @@ def extract_audio_from_video(url):
         print(f"Failed to extract audio: {e}")
         return None
 
-def load_custom_wav2vec2_model(repo_id, filename, model_name, num_labels=23):
+def load_model(repo_id = "BoboThePotato/BobosAudioModel", filename = "accent_recognition_model_state_dict (1).pth", model_name = "facebook/wav2vec2-base", num_labels=23):
     state_dict_path = hf_hub_download(repo_id=repo_id, filename=filename)
     config = Wav2Vec2Config.from_pretrained(model_name)
     config.num_labels = num_labels
