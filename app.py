@@ -130,7 +130,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-        except Exception as e:
-            st.error(f"Something went wrong: {e}")
-
