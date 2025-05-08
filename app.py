@@ -15,21 +15,30 @@ import streamlit as st
 def extract_audio_from_video(url):
     print(f"Extracting audio from: {url}")
     video_path = "downloaded_video.mkv"
+    audio_path = "audio.mp3"
+
+    if os.path.exists(video_path):
+        os.remove(video_path)
+    if os.path.exists(audio_path):
+        os.remove(audio_path)
+
     ydl_opts = {
         'format': 'bestvideo+bestaudio/best',
         'outtmpl': video_path,
         'merge_output_format': 'mkv',
         'quiet': True,
     }
+
     try:
         with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
         clip = VideoFileClip(video_path)
-        clip.audio.write_audiofile("audio.mp3")
-        return "audio.mp3"
+        clip.audio.write_audiofile(audio_path)
+        return audio_path
     except Exception as e:
         print(f"Failed to extract audio: {e}")
         return None
+
 
 def load_model(repo_id = "BoboThePotato/BobosAudioModel", filename = "accent_recognition_model_state_dict.pth", model_name = "facebook/wav2vec2-base", num_labels=23):
     state_dict_path = hf_hub_download(repo_id=repo_id, filename=filename)
