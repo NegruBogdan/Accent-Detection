@@ -9,7 +9,28 @@ import numpy as np
 from scipy.signal import resample
 import streamlit as st
 from huggingface_hub import hf_hub_download
+import streamlit as st
+import torch
+import ffmpeg
 
+# Display PyTorch version
+st.write(f"PyTorch Version: {torch.__version__}")
+
+# Check if CUDA is available (GPU support)
+if torch.cuda.is_available():
+    st.write("CUDA is available!")
+else:
+    st.write("CUDA is not available, using CPU.")
+
+# Test if FFmpeg is installed and available
+try:
+    ffmpeg_version = ffmpeg.probe('version')
+    st.write("FFmpeg Version:", ffmpeg_version)
+except ffmpeg.Error as e:
+    st.write("FFmpeg is not installed or there is an error:", e)
+
+# Display a message to ensure everything is loaded correctly
+st.write("Streamlit is working correctly!")
 def extract_audio_from_video(url):
     try:
         print(f"Extracting audio from: {url}")
