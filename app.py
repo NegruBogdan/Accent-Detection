@@ -38,11 +38,10 @@ def load_model(model_name="facebook/wav2vec2-base", repo_id="BoboThePotato/Bobos
         model_name, num_labels=23, problem_type="single_label_classification"
     )
     processor = Wav2Vec2Processor.from_pretrained(model_name)
-    
-    state_dict = torch.load(state_dict_path)
+    state_dict = torch.load(state_dict_path, map_location=torch.device('cpu'))
     model.load_state_dict(state_dict)
     
-    model.eval() 
+    model.eval()  
     return model, processor
 
 def load_label_mapping():
