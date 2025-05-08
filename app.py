@@ -110,31 +110,30 @@ def predict_accent(audio_path, model, processor, label_mapping, max_length=16000
 def main():
     st.title("Accent Detection from YouTube Video")
 
-    if 'cleanup_done' not in st.session_state:
-        st.session_state.cleanup_done = False
-
     url = st.text_input("Enter YouTube URL:")
 
-    if url and not st.session_state.cleanup_done:
-        model, processor = load_model()
-        label_mapping = load_label_mapping()
+    if url:
+        try:
+            model, processor = load_model()
+            label_mapping = load_label_mapping()
 
-        audio_path = extract_audio_from_video(url)
-        video_path = "downloaded_video.mkv"
+            audio_path = extract_audio_from_video(url)
+            video_path = "downloaded_video.mkv"
 
-        if audio_path:
-            predicted_label, confidence = predict_accent(audio_path, model, processor, label_mapping)
-            if predicted_label is not None:
-                st.write(f"Predicted Accent: {predicted_label}")
-                st.write(f"Confidence: {confidence:.2f}")
+            if audio_path:
+                predicted_label, confidence = predict_accent(audio_path, model, processor, label_mapping)
+                if predicted_label is not None:
+                    st.write(f"Predicted Accent: {predicted_label}")
+                    st.write(f"Confidence: {confidence:.2f}")
+                else:
+                    st.write("Accent prediction failed.")
             else:
-                st.write("Accent prediction failed.")
-        else:
-            st.write("Failed to extract audio from the video.")
+                st.write("Failed to extract audio from the video.")
 
-        for file in [audio_path, video_path]:
-            if file and os.path.exists(file):
-                os.remove(file)
+            for file in [audio_path, video_path]:
+                if file and os.path.exists(file):
+                    os.remove(file)
 
-        st.session_state.cleanup_done = True
+        except Exception as e:
+            st.error(f"Something went wrong: {e}")
 
