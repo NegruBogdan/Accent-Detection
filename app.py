@@ -3,7 +3,7 @@ import moviepy.editor as mp
 from moviepy.editor import VideoFileClip
 
 import torch
-from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2Processor
+from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2Processor,Wav2Vec2Config
 import soundfile as sf
 import os
 from pydub import AudioSegment
@@ -32,17 +32,21 @@ def extract_audio_from_video(url):
         print(f"Failed to extract audio: {e}")
         return None
 
-def load_model(model_name="facebook/wav2vec2-base", repo_id="BoboThePotato/BobosAudioModel", filename="accent_recognition_model_state_dict (1).pth"):
+def load_custom_wav2vec2_model(repo_id, filename, model_name, num_labels=23):
     state_dict_path = hf_hub_download(repo_id=repo_id, filename=filename)
-    
-    model = Wav2Vec2ForSequenceClassification.from_pretrained(
-        model_name, num_labels=23, problem_type="single_label_classification"
-    )
+    config = Wav2Vec2Config.from_pretrained(model_name)
+    config.num_labels = num_labels
+    config.problem_type = "single_label_classification"
+
+    model = Wav2Vec2ForSequenceClassification(config)
+
     processor = Wav2Vec2Processor.from_pretrained(model_name)
+
     state_dict = torch.load(state_dict_path, map_location=torch.device('cpu'))
     model.load_state_dict(state_dict)
-    
-    model.eval()  
+
+    model.eval()
+
     return model, processor
 
 def load_label_mapping():
