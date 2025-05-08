@@ -1,2 +1,1 @@
-In order to run this script, make sure you have Python installed on your machine. Required modules are listed in the requirements.txt file. You can install them by running this line pip install -r requirements.txt . A version of ffmpeg should also pe present in the environment.
-Once these steps are done, you can run the script from the command line by executing: python accent_prediction_script.py --url "your_url".
+This app uses a trained neural network model in order to determine the english accent in a given youtube video. You can acess the app at https://accent-detection-y37gczzd3aplyqhh3oepjn.streamlit.app/. 
