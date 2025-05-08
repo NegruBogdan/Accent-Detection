@@ -113,26 +113,23 @@ def main():
     url = st.text_input("Enter YouTube URL:")
 
     if url:
-        try:
-            model, processor = load_model()
-            label_mapping = load_label_mapping()
+        model, processor = load_model()
 
-            audio_path = extract_audio_from_video(url)
-            video_path = "downloaded_video.mkv"
-
-            if audio_path:
-                predicted_label, confidence = predict_accent(audio_path, model, processor, label_mapping)
-                if predicted_label is not None:
-                    st.write(f"Predicted Accent: {predicted_label}")
-                    st.write(f"Confidence: {confidence:.2f}")
-                else:
-                    st.write("Accent prediction failed.")
+        label_mapping = load_label_mapping()
+        
+        audio_path = extract_audio_from_video(url)
+        if audio_path:
+            predicted_label, confidence = predict_accent(audio_path, model, processor, label_mapping)
+            if predicted_label is not None:
+                st.write(f"Predicted Accent: {predicted_label}")
+                st.write(f"Confidence: {confidence:.2f}")
             else:
-                st.write("Failed to extract audio from the video.")
+                st.write("Accent prediction failed.")
+        else:
+            st.write("Failed to extract audio from the video.")
 
-            for file in [audio_path, video_path]:
-                if file and os.path.exists(file):
-                    os.remove(file)
+if __name__ == "__main__":
+    main()
 
         except Exception as e:
             st.error(f"Something went wrong: {e}")
