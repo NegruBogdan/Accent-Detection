@@ -76,7 +76,7 @@ def load_label_mapping():
         22: "American"
     }
 
-def predict_accent(audio_path, model, processor, label_mapping):
+def predict_accent(audio_path, model, processor, label_mapping, max_length=16000*5):
     try:
         speech_array, original_sr = sf.read(audio_path)
         if len(speech_array.shape) > 1:
@@ -87,13 +87,19 @@ def predict_accent(audio_path, model, processor, label_mapping):
             num_samples = int(len(speech_array) * target_sr / original_sr)
             speech_array = resample(speech_array, num_samples)
 
+        if len(speech_array) > max_length:
+            speech_array = speech_array[:max_length]  
+        else:
+            speech_array = np.pad(speech_array, (0, max_length - len(speech_array))) 
+
         inputs = processor(speech_array, sampling_rate=target_sr, return_tensors="pt", padding=True)
+        
         inputs = {key: val.to(model.device) for key, val in inputs.items()}
 
         with torch.no_grad():
             logits = model(**inputs).logits
-
         predicted_id = torch.argmax(logits, dim=-1).item()
+    
         confidence = torch.softmax(logits, dim=-1)[0][predicted_id].item()
         predicted_label = label_mapping[predicted_id]
 
