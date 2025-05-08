@@ -1,5 +1,7 @@
-import yt_dlp
+from yt_dlp import YoutubeDL
 import moviepy.editor as mp
+from moviepy.editor import VideoFileClip
+
 import torch
 from transformers import Wav2Vec2ForSequenceClassification, Wav2Vec2Processor
 import soundfile as sf
@@ -12,22 +14,20 @@ from huggingface_hub import hf_hub_download
 import streamlit as st
 
 def extract_audio_from_video(url):
+    print(f"Extracting audio from: {url}")
+    video_path = "downloaded_video.mkv"
+    ydl_opts = {
+        'format': 'bestvideo+bestaudio/best',
+        'outtmpl': video_path,
+        'merge_output_format': 'mkv',
+        'quiet': True,
+    }
     try:
-        print(f"Extracting audio from: {url}")
-        video_path = "downloaded_video.mp4"
-        ydl_opts = {
-            'format': '137+251',
-            'outtmpl': 'downloaded_video.%(ext)s'
-        }
-        with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        with YoutubeDL(ydl_opts) as ydl:
             ydl.download([url])
-
-        downloaded_path = "downloaded_video.mkv"
-        audio_output = "audio.mp3"
-
-        video = mp.VideoFileClip(downloaded_path)
-        video.audio.write_audiofile(audio_output)
-        return audio_output
+        clip = VideoFileClip(video_path)
+        clip.audio.write_audiofile("audio.mp3")
+        return "audio.mp3"
     except Exception as e:
         print(f"Failed to extract audio: {e}")
         return None
